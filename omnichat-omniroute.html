@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#090b12" />
+  <title>OmniChat — OmniRoute AI</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b12;
+      --panel: #111522;
+      --panel2: #171c2c;
+      --border: #293148;
+      --text: #f3f5ff;
+      --muted: #9aa5bf;
+      --accent: #8b5cf6;
+      --accent2: #22d3ee;
+      --danger: #fb7185;
+      --good: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background:
+        radial-gradient(ellipse at 10% 0%, rgba(139,92,246,.16), transparent 38%),
+        radial-gradient(ellipse at 95% 15%, rgba(34,211,238,.10), transparent 30%), var(--bg);
+      color: var(--text); font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: grid; grid-template-columns: 290px minmax(0,1fr); min-height: 100vh; max-width: 1600px; margin: auto; }
+    aside { padding: 22px 16px; border-right: 1px solid var(--border); background: rgba(10,13,22,.78); display:flex; flex-direction:column; gap:18px; }
+    .brand { display:flex; align-items:center; gap:11px; padding: 0 6px 12px; }
+    .logo { width:42px; height:42px; border-radius:14px; display:grid; place-items:center; font-size:22px; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 8px 28px #8b5cf633; }
+    .brand h1 { margin:0; font-size:18px; letter-spacing:.2px; }
+    .brand small { color:var(--muted); display:block; font-size:12px; }
+    .primary, .secondary, .icon-btn { border:1px solid var(--border); border-radius:12px; padding:11px 13px; color:var(--text); background:var(--panel2); }
+    .primary { background:linear-gradient(100deg,#7c3aed,#2563eb); border:0; font-weight:650; }
+    .primary:hover { filter:brightness(1.12); }
+    .secondary:hover, .icon-btn:hover { border-color:#596684; }
+    .side-label { color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:1.2px; padding:0 8px; }
+    .history { display:flex; flex-direction:column; gap:7px; }
+    .history-item { text-align:left; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; border:1px solid transparent; color:#c7cee1; background:transparent; border-radius:10px; padding:10px; }
+    .history-item.active, .history-item:hover { background:var(--panel2); border-color:var(--border); }
+    .side-bottom { margin-top:auto; display:grid; gap:9px; }
+    .connection { border:1px solid var(--border); border-radius:12px; padding:12px; color:var(--muted); font-size:12px; }
+    .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#64748b; margin-right:7px; }
+    .status-dot.ok { background:var(--good); box-shadow:0 0 10px #34d39977; }
+    main { min-width:0; display:flex; flex-direction:column; min-height:100vh; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; padding:17px 24px; border-bottom:1px solid var(--border); background:#0b0e17b8; position:sticky; top:0; z-index:2; backdrop-filter:blur(14px); }
+    .topbar-title { font-weight:650; }
+    .topbar-sub { font-size:12px; color:var(--muted); }
+    .top-actions { display:flex; gap:8px; }
+    .icon-btn { padding:8px 11px; }
+    .content { width:min(900px,100%); margin:0 auto; padding:28px 22px 18px; flex:1; display:flex; flex-direction:column; }
+    .welcome { text-align:center; margin:auto 0; padding:35px 0; }
+    .welcome-orb { width:74px; height:74px; display:grid; place-items:center; margin:0 auto 20px; font-size:32px; border-radius:24px; background:linear-gradient(135deg,#7c3aed55,#06b6d455); border:1px solid #7c8bff55; }
+    .welcome h2 { font-size:clamp(26px,4vw,38px); line-height:1.15; margin:0 0 12px; }
+    .gradient-text { background:linear-gradient(90deg,#c4b5fd,#67e8f9); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .welcome p { color:var(--muted); max-width:540px; margin:0 auto 25px; }
+    .suggestions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:660px; margin:auto; }
+    .suggestion { text-align:left; background:#121726bb; border:1px solid var(--border); border-radius:14px; padding:14px; color:#dbe2f6; }
+    .suggestion:hover { border-color:#7c6ee8; background:#171b2d; }
+    .suggestion strong { display:block; margin-bottom:4px; font-size:13px; }
+    .suggestion span { color:var(--muted); font-size:12px; }
+    .messages { display:flex; flex-direction:column; gap:20px; padding-bottom:20px; }
+    .message { display:grid; grid-template-columns:34px minmax(0,1fr); gap:12px; animation:fadeIn .2s ease; }
+    .avatar { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; background:var(--panel2); border:1px solid var(--border); }
+    .message.user .avatar { background:#3b2a70; }
+    .message-body { min-width:0; overflow-wrap:anywhere; padding-top:4px; white-space:pre-wrap; }
+    .message-head { font-size:12px; color:var(--muted); margin-bottom:5px; }
+    .message-body pre { white-space:pre-wrap; overflow:auto; background:#080b12; padding:12px; border:1px solid var(--border); border-radius:10px; }
+    .message-body code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.92em; }
+    .error { color:#fecdd3; border:1px solid #9f3346; background:#3b101b66; border-radius:12px; padding:12px; margin:12px 0; }
+    .composer-wrap { position:sticky; bottom:0; padding:16px 22px 20px; background:linear-gradient(transparent,var(--bg) 18%); }
+    .composer { max-width:850px; margin:auto; border:1px solid #343d57; background:#111522; border-radius:18px; padding:10px; box-shadow:0 14px 40px #0004; }
+    .composer textarea { display:block; width:100%; resize:vertical; min-height:54px; max-height:180px; border:0; outline:0; background:transparent; color:var(--text); padding:7px 9px; }
+    .composer-bottom { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 3px 1px; }
+    .model-pill { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .send-row { display:flex; gap:8px; align-items:center; }
+    .send-btn { border:0; border-radius:11px; padding:9px 15px; background:linear-gradient(100deg,#7c3aed,#2563eb); color:white; font-weight:650; }
+    .send-btn:disabled { opacity:.45; cursor:not-allowed; }
+    .hint { color:#77829e; font-size:11px; text-align:center; padding-top:10px; }
+    dialog { width:min(560px,calc(100% - 24px)); border:1px solid var(--border); border-radius:18px; color:var(--text); background:#101421; padding:0; box-shadow:0 25px 100px #000a; }
+    dialog::backdrop { background:#02040acc; backdrop-filter:blur(5px); }
+    .dialog-head { padding:19px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .dialog-head h2 { font-size:17px; margin:0; }
+    .dialog-body { padding:20px; display:grid; gap:14px; }
+    .field { display:grid; gap:6px; }
+    .field label { color:#cbd4ea; font-size:13px; font-weight:600; }
+    .field input, .field select { width:100%; min-width:0; padding:11px 12px; border-radius:10px; border:1px solid var(--border); background:#090c14; color:var(--text); outline:none; }
+    .field input:focus, .field select:focus { border-color:#8b5cf6; }
+    .field small, .privacy-note { color:var(--muted); font-size:12px; }
+    .dialog-actions { display:flex; justify-content:space-between; gap:8px; padding:0 20px 20px; }
+    .checkline { display:flex; gap:9px; align-items:flex-start; font-size:12px; color:var(--muted); }
+    .checkline input { margin-top:4px; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1b2437; border:1px solid #3a4560; color:#fff; padding:11px 15px; border-radius:12px; z-index:10; display:none; max-width:calc(100% - 24px); }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(4px)} to {opacity:1; transform:translateY(0)} }
+    @media(max-width:760px) {
+      .app { grid-template-columns:1fr; }
+      aside { display:none; }
+      .topbar { padding:13px 15px; }
+      .content { padding:20px 15px 10px; }
+      .composer-wrap { padding:12px 12px 16px; }
+      .suggestions { grid-template-columns:1fr; }
+      .welcome { margin:35px 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <div class="logo">✦</div>
+      <div><h1>OmniChat</h1><small>Powered by OmniRoute</small></div>
+    </div>
+    <button class="primary" id="newChatBtn">＋ &nbsp; New chat</button>
+    <div class="side-label">Recent chats</div>
+    <div class="history" id="historyList"></div>
+    <div class="side-bottom">
+      <button class="secondary" id="settingsBtn">⚙ &nbsp; API & model settings</button>
+      <div class="connection"><span class="status-dot" id="statusDot"></span><span id="statusText">Not connected</span><div style="margin-top:6px">Your browser connects directly to your OmniRoute endpoint.</div></div>
+    </div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <div><div class="topbar-title">OmniChat <span style="color:#7c8ba8;font-weight:400">/</span> <span id="topModel">Configure a model</span></div><div class="topbar-sub">Your models. Your endpoint. Your conversation.</div></div>
+      <div class="top-actions"><button class="icon-btn" id="mobileSettingsBtn" title="Settings">⚙ Settings</button><button class="icon-btn" id="clearBtn" title="Clear current chat">Clear</button></div>
+    </header>
+    <section class="content">
+      <div class="welcome" id="welcome">
+        <div class="welcome-orb">✦</div>
+        <h2>What can we <span class="gradient-text">explore today?</span></h2>
+        <p>Connect your OmniRoute API, choose a model, and start chatting. Add your endpoint in settings to begin.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-prompt="Explain a difficult topic to me step by step."><strong>🎓 Learn something</strong><span>Explain a topic step by step</span></button>
+          <button class="suggestion" data-prompt="Help me build a simple website and explain the code."><strong>💻 Build with code</strong><span>Plan and write a small project</span></button>
+          <button class="suggestion" data-prompt="Help me brainstorm practical ideas for a project."><strong>💡 Brainstorm ideas</strong><span>Explore useful possibilities</span></button>
+          <button class="suggestion" data-prompt="Help me organize my tasks into a clear plan."><strong>🗂️ Make a plan</strong><span>Turn a goal into steps</span></button>
+        </div>
+      </div>
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <div id="inlineError"></div>
+    </section>
+    <div class="composer-wrap">
+      <form class="composer" id="chatForm">
+        <textarea id="promptInput" rows="2" placeholder="Message OmniChat…" aria-label="Message" required></textarea>
+        <div class="composer-bottom">
+          <div class="model-pill" id="composerModel">Set API URL and model in Settings</div>
+          <div class="send-row"><button type="button" class="icon-btn" id="fetchModelsBtn" title="Load model list">↻ Models</button><button class="send-btn" id="sendBtn" type="submit">Send ↑</button></div>
+        </div>
+      </form>
+      <div class="hint">AI can make mistakes. Avoid sending passwords or sensitive personal information.</div>
+    </div>
+  </main>
+</div>
+
+<dialog id="settingsDialog">
+  <div class="dialog-head"><h2>API & model settings</h2><button class="icon-btn" id="closeSettingsBtn" aria-label="Close settings">✕</button></div>
+  <form id="settingsForm">
+    <div class="dialog-body">
+      <div class="field"><label for="apiBase">OmniRoute API base URL</label><input id="apiBase" type="url" placeholder="https://your-server.example/v1" required autocomplete="url"><small>Use the base ending in <code>/v1</code>, not the full chat-completions path. Localhost only works on the device running OmniRoute.</small></div>
+      <div class="field"><label for="apiKey">API key</label><input id="apiKey" type="password" placeholder="Enter your API key" autocomplete="off" required><small>Kept in this page's memory only; it is not saved to local storage. Reloading clears it.</small></div>
+      <div class="field"><label for="modelInput">Model ID</label><input id="modelInput" type="text" placeholder="e.g. provider/model-name or auto" required><small>Enter a model supported by your OmniRoute configuration, or use “Load models” after saving.</small></div>
+      <div class="field"><label for="systemPrompt">System instruction (optional)</label><input id="systemPrompt" type="text" placeholder="e.g. Be a helpful coding assistant."></div>
+      <label class="checkline"><input id="rememberNonSecret" type="checkbox"><span>Remember API URL, model ID, and system instruction on this device. The API key will never be remembered.</span></label>
+      <div class="privacy-note">Security: this static page sends requests directly from your browser to the API URL you provide. Only enter a trusted endpoint. Your server must allow your website's origin with CORS. Do not put admin or provider master keys here.</div>
+      <div id="settingsError" class="error" style="display:none;margin:0"></div>
+    </div>
+    <div class="dialog-actions"><button type="button" class="secondary" id="testConnectionBtn">Test connection</button><button type="submit" class="primary">Save settings</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    apiBase: "", apiKey: "", model: "", systemPrompt: "",
+    chats: [], activeChatId: null, busy: false
+  };
+  const stored = (() => {
+    try { return JSON.parse(localStorage.getItem("omnichat_prefs") || "{}"); }
+    catch { return {}; }
+  })();
+  if (stored && typeof stored === "object") {
+    state.apiBase = stored.apiBase || "";
+    state.model = stored.model || "";
+    state.systemPrompt = stored.systemPrompt || "";
+  }
+  $("apiBase").value = state.apiBase;
+  $("modelInput").value = state.model;
+  $("systemPrompt").value = state.systemPrompt;
+  $("rememberNonSecret").checked = Boolean(stored.apiBase || stored.model || stored.systemPrompt);
+
+  function baseUrl() { return state.apiBase.trim().replace(/\/+$/, ""); }
+  function showToast(message) {
+    const el = $("toast"); el.textContent = message; el.style.display = "block";
+    clearTimeout(showToast.timer); showToast.timer = setTimeout(() => el.style.display = "none", 3200);
+  }
+  function setStatus(ok, text) {
+    $("statusDot").classList.toggle("ok", Boolean(ok));
+    $("statusText").textContent = text;
+  }
+  function syncModelLabels() {
+    const label = state.model || "No model selected";
+    $("topModel").textContent = label;
+    $("composerModel").textContent = state.apiBase ? `${label} · ${state.apiBase}` : "Set API URL and model in Settings";
+  }
+  function persistPrefs() {
+    if ($("rememberNonSecret").checked) {
+      localStorage.setItem("omnichat_prefs", JSON.stringify({
+        apiBase: state.apiBase, model: state.model, systemPrompt: state.systemPrompt
+      }));
+    } else {
+      localStorage.removeItem("omnichat_prefs");
+    }
+  }
+  function currentChat() {
+    let chat = state.chats.find(c => c.id === state.activeChatId);
+    if (!chat) {
+      chat = { id: String(Date.now()), title: "New chat", messages: [] };
+      state.chats.unshift(chat); state.activeChatId = chat.id;
+    }
+    return chat;
+  }
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+  }
+  function renderMessage(role, content) {
+    const wrap = document.createElement("div");
+    wrap.className = `message ${role === "user" ? "user" : "assistant"}`;
+    const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = role === "user" ? "🙂" : "✦";
+    const body = document.createElement("div"); body.className = "message-body";
+    const head = document.createElement("div"); head.className = "message-head"; head.textContent = role === "user" ? "You" : "OmniChat";
+    const text = document.createElement("div");
+    // Render as plain text for safety; no HTML from model output is executed.
+    text.textContent = content;
+    body.append(head, text); wrap.append(avatar, body); $("messages").append(wrap);
+    return text;
+  }
+  function renderChat() {
+    const chat = currentChat();
+    $("messages").innerHTML = "";
+    $("inlineError").innerHTML = "";
+    $("welcome").style.display = chat.messages.length ? "none" : "block";
+    chat.messages.forEach(m => renderMessage(m.role, m.content));
+    renderHistory();
+    $("messages").scrollIntoView({ block: "end", behavior: "smooth" });
+  }
+  function renderHistory() {
+    const list = $("historyList"); list.innerHTML = "";
+    state.chats.slice(0, 12).forEach(chat => {
+      const b = document.createElement("button"); b.className = "history-item" + (chat.id === state.activeChatId ? " active" : "");
+      b.textContent = chat.title || "New chat"; b.title = b.textContent;
+      b.addEventListener("click", () => { state.activeChatId = chat.id; renderChat(); });
+      list.append(b);
+    });
+  }
+  function addError(message) {
+    const box = document.createElement("div"); box.className = "error"; box.textContent = message;
+    $("inlineError").replaceChildren(box);
+  }
+  function openSettings() {
+    $("settingsError").style.display = "none";
+    $("settingsDialog").showModal();
+  }
+  function readForm() {
+    state.apiBase = $("apiBase").value.trim().replace(/\/+$/, "");
+    state.apiKey = $("apiKey").value.trim();
+    state.model = $("modelInput").value.trim();
+    state.systemPrompt = $("systemPrompt").value.trim();
+  }
+  function validateSettings(requireKey = true) {
+    readForm();
+    if (!state.apiBase) throw new Error("Enter your OmniRoute API base URL.");
+    let url;
+    try { url = new URL(state.apiBase); } catch { throw new Error("The API base URL is not valid."); }
+    if (!["http:", "https:"].includes(url.protocol)) throw new Error("The API URL must start with http:// or https://.");
+    if (location.protocol === "https:" && url.protocol === "http:") throw new Error("Your hosted HTTPS page cannot call an HTTP API. Use an HTTPS OmniRoute endpoint.");
+    if (requireKey && !state.apiKey) throw new Error("Enter your API key.");
+    if (!state.model) throw new Error("Enter a model ID.");
+  }
+  async function requestJson(url, options = {}) {
+    let response;
+    try { response = await fetch(url, options); }
+    catch (e) {
+      if (e instanceof TypeError) throw new Error("Could not reach the API. Check the endpoint, server status, network, HTTPS, and CORS settings.");
+      throw e;
+    }
+    const raw = await response.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch { data = { raw }; }
+    if (!response.ok) {
+      const detail = data?.error?.message || data?.message || data?.raw || response.statusText;
+      throw new Error(`API returned ${response.status}: ${String(detail).slice(0, 500)}`);
+    }
+    return data;
+  }
+  async function testConnection(showSuccess = true) {
+    validateSettings(true);
+    const data = await requestJson(`${baseUrl()}/models`, {
+      method: "GET", headers: { "Authorization": `Bearer ${state.apiKey}` }
+    });
+    if (showSuccess) {
+      const count = Array.isArray(data.data) ? data.data.length : null;
+      setStatus(true, count === null ? "API reachable" : `Connected · ${count} models`);
+      showToast(count === null ? "API responded successfully." : `Connected. Found ${count} model(s).`);
+    }
+    return data;
+  }
+  async function loadModels() {
+    try {
+      readForm();
+      if (!state.apiBase || !state.apiKey) throw new Error("Enter and save the API URL and key first.");
+      const data = await requestJson(`${baseUrl()}/models`, { headers: { "Authorization": `Bearer ${state.apiKey}` } });
+      const models = Array.isArray(data.data) ? data.data : [];
+      if (!models.length) { showToast("API responded, but did not return a standard model list. Enter the model ID manually."); return; }
+      const existing = state.model;
+      const options = models.map(m => m.id).filter(Boolean);
+      const chosen = window.prompt("Available model IDs:\n\n" + options.join("\n") + "\n\nEnter the exact model ID to use:", existing || options[0]);
+      if (chosen !== null && chosen.trim()) {
+        state.model = chosen.trim(); $("modelInput").value = state.model; syncModelLabels(); persistPrefs(); showToast("Model updated.");
+      }
+    } catch (e) { showToast(e.message); setStatus(false, "Connection failed"); }
+  }
+  async function sendMessage(message) {
+    if (state.busy) return;
+    try { validateSettings(true); }
+    catch (e) { openSettings(); $("settingsError").textContent = e.message; $("settingsError").style.display = "block"; return; }
+    const chat = currentChat();
+    const userMessage = { role: "user", content: message };
+    chat.messages.push(userMessage);
+    if (chat.title === "New chat") chat.title = message.slice(0, 38) + (message.length > 38 ? "…" : "");
+    $("welcome").style.display = "none";
+    renderMessage("user", message);
+    $("promptInput").value = "";
+    $("inlineError").innerHTML = "";
+    const assistantText = renderMessage("assistant", "Thinking…");
+    state.busy = true; $("sendBtn").disabled = true; $("fetchModelsBtn").disabled = true;
+    try {
+      const messages = [];
+      if (state.systemPrompt) messages.push({ role: "system", content: state.systemPrompt });
+      chat.messages.forEach(m => messages.push({ role: m.role, content: m.content }));
+      const data = await requestJson(`${baseUrl()}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.apiKey}` },
+        body: JSON.stringify({ model: state.model, messages, stream: false })
+      });
+      const answer = data?.choices?.[0]?.message?.content;
+      if (typeof answer !== "string") throw new Error("The API response did not include choices[0].message.content. Check your model and OmniRoute API compatibility.");
+      assistantText.textContent = answer;
+      chat.messages.push({ role: "assistant", content: answer });
+      setStatus(true, "Connected");
+    } catch (e) {
+      assistantText.textContent = "I couldn't get a response.";
+      addError(e.message);
+      setStatus(false, "Connection error");
+    } finally {
+      state.busy = false; $("sendBtn").disabled = false; $("fetchModelsBtn").disabled = false;
+      renderHistory();
+    }
+  }
+  $("settingsBtn").addEventListener("click", openSettings);
+  $("mobileSettingsBtn").addEventListener("click", openSettings);
+  $("closeSettingsBtn").addEventListener("click", () => $("settingsDialog").close());
+  $("settingsForm").addEventListener("submit", e => {
+    e.preventDefault();
+    try {
+      validateSettings(true);
+      persistPrefs(); syncModelLabels(); setStatus(false, "Ready to connect");
+      $("settingsDialog").close(); showToast("Settings saved for this session.");
+    } catch (err) {
+      $("settingsError").textContent = err.message; $("settingsError").style.display = "block";
+    }
+  });
+  $("testConnectionBtn").addEventListener("click", async () => {
+    try { await testConnection(); }
+    catch (e) { $("settingsError").textContent = e.message; $("settingsError").style.display = "block"; setStatus(false, "Connection failed"); }
+  });
+  $("fetchModelsBtn").addEventListener("click", loadModels);
+  $("chatForm").addEventListener("submit", e => {
+    e.preventDefault(); const value = $("promptInput").value.trim(); if (value) sendMessage(value);
+  });
+  $("promptInput").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("chatForm").requestSubmit(); }
+  });
+  $("newChatBtn").addEventListener("click", () => {
+    const chat = { id: String(Date.now()), title: "New chat", messages: [] };
+    state.chats.unshift(chat); state.activeChatId = chat.id; renderChat();
+  });
+  $("clearBtn").addEventListener("click", () => {
+    const chat = currentChat(); chat.messages = []; chat.title = "New chat"; renderChat();
+  });
+  document.querySelectorAll("[data-prompt]").forEach(b => b.addEventListener("click", () => {
+    $("promptInput").value = b.dataset.prompt; $("promptInput").focus();
+  }));
+  // API key intentionally is never read from or written to localStorage.
+  syncModelLabels();
+  state.chats = [{ id: String(Date.now()), title: "New chat", messages: [] }];
+  state.activeChatId = state.chats[0].id;
+  renderChat();
+  if (state.apiBase && state.model) setStatus(false, "Enter API key in Settings");
+})();
+</script>
+</body>
+</html>
